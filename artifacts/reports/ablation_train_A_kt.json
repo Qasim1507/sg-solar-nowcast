@@ -1,0 +1,122 @@
+[
+  {
+    "variant": "temporal",
+    "target_space": "kt",
+    "seed": 0,
+    "best_val_pinball": 31.628333409627277,
+    "checkpoint": "A_temporal_kt_seed0.pt",
+    "params": 83471,
+    "n_train": 9566,
+    "n_test": 2051
+  },
+  {
+    "variant": "temporal",
+    "target_space": "kt",
+    "seed": 1,
+    "best_val_pinball": 29.40538348573627,
+    "checkpoint": "A_temporal_kt_seed1.pt",
+    "params": 83471,
+    "n_train": 9566,
+    "n_test": 2051
+  },
+  {
+    "variant": "temporal",
+    "target_space": "kt",
+    "seed": 2,
+    "best_val_pinball": 29.27795918782552,
+    "checkpoint": "A_temporal_kt_seed2.pt",
+    "params": 83471,
+    "n_train": 9566,
+    "n_test": 2051
+  },
+  {
+    "variant": "spatial",
+    "target_space": "kt",
+    "seed": 0,
+    "best_val_pinball": 33.174367789066196,
+    "checkpoint": "A_spatial_kt_seed0.pt",
+    "params": 124559,
+    "n_train": 9566,
+    "n_test": 2051
+  },
+  {
+    "variant": "spatial",
+    "target_space": "kt",
+    "seed": 1,
+    "best_val_pinball": 36.228125427708484,
+    "checkpoint": "A_spatial_kt_seed1.pt",
+    "params": 124559,
+    "n_train": 9566,
+    "n_test": 2051
+  },
+  {
+    "variant": "spatial",
+    "target_space": "kt",
+    "seed": 2,
+    "best_val_pinball": 35.689815636837125,
+    "checkpoint": "A_spatial_kt_seed2.pt",
+    "params": 124559,
+    "n_train": 9566,
+    "n_test": 2051
+  },
+  {
+    "variant": "concat",
+    "target_space": "kt",
+    "seed": 0,
+    "best_val_pinball": 29.886874747998785,
+    "checkpoint": "A_concat_kt_seed0.pt",
+    "params": 246927,
+    "n_train": 9566,
+    "n_test": 2051
+  },
+  {
+    "variant": "concat",
+    "target_space": "kt",
+    "seed": 1,
+    "best_val_pinball": 31.35303849884958,
+    "checkpoint": "A_concat_kt_seed1.pt",
+    "params": 246927,
+    "n_train": 9566,
+    "n_test": 2051
+  },
+  {
+    "variant": "concat",
+    "target_space": "kt",
+    "seed": 2,
+    "best_val_pinball": 32.09411129806981,
+    "checkpoint": "A_concat_kt_seed2.pt",
+    "params": 246927,
+    "n_train": 9566,
+    "n_test": 2051
+  },
+  {
+    "variant": "gated",
+    "target_space": "kt",
+    "seed": 0,
+    "best_val_pinball": 29.214523315429688,
+    "checkpoint": "A_gated_kt_seed0.pt",
+    "params": 230736,
+    "n_train": 9566,
+    "n_test": 2051
+  },
+  {
+    "variant": "gated",
+    "target_space": "kt",
+    "seed": 1,
+    "best_val_pinball": 29.183507283528645,
+    "checkpoint": "A_gated_kt_seed1.pt",
+    "params": 230736,
+    "n_train": 9566,
+    "n_test": 2051
+  },
+  {
+    "variant": "gated",
+    "target_space": "kt",
+    "seed": 2,
+    "best_val_pinball": 28.723086790605024,
+    "checkpoint": "A_gated_kt_seed2.pt",
+    "params": 230736,
+    "n_train": 9566,
+    "n_test": 2051
+  }
+]

@@ -1,0 +1,83 @@
+name: nowcast
+
+# Keeps the model running without keeping a server alive.
+#
+# The dashboard needs continuous ISSUANCE, not a continuous web process - so the
+# cron does the work and publishes a static page. Nothing sleeps, nothing is billed.
+#
+# 08:00-17:00 SGT is 00:00-09:00 UTC. Outside that window api.main.in_daylight
+# refuses to issue (night targets are ~0 W/m2 and were excluded from training), so
+# the job still runs but only collects outcomes.
+on:
+  schedule:
+    - cron: "*/15 0-9 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write        # commit the CSV store
+  pages: write           # publish the dashboard
+  id-token: write
+
+# Never let two cycles race the data branch. Do NOT cancel in progress: a cancelled
+# run could commit a half-written store.
+concurrency:
+  group: nowcast
+  cancel-in-progress: false
+
+jobs:
+  cycle:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Check out the forecast store
+        uses: actions/checkout@v4
+        with:
+          ref: forecast-data
+          path: .store
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install serving dependencies
+        # the `serve` extra omits torch: predict.py imports it lazily and the
+        # served model is CatBoost, so the runner never needs ~800 MB of wheels
+        run: pip install -e ".[serve]"
+
+      - name: Restore store from CSV
+        run: python scripts/store_sync.py import --data-dir .store/data_store
+
+      - name: Issue forecast and collect outcomes
+        run: python scripts/run_cycle.py
+
+      - name: Export store to CSV
+        run: python scripts/store_sync.py export --data-dir .store/data_store
+
+      - name: Commit store
+        working-directory: .store
+        run: |
+          git config user.name  "nowcast-bot"
+          git config user.email "nowcast-bot@users.noreply.github.com"
+          git add data_store
+          if git diff --staged --quiet; then
+            echo "no new rows this cycle"
+          else
+            git commit -m "store: cycle $(date -u +%Y-%m-%dT%H:%MZ)"
+            git push
+          fi
+
+      - name: Build static dashboard
+        run: python scripts/build_static_site.py --out site
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4

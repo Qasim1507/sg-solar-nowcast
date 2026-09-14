@@ -1,0 +1,109 @@
+{
+  "features": [
+    "clearsky_ratio",
+    "cloud_cover",
+    "temperature_2m",
+    "rain",
+    "wind_speed_10m",
+    "relative_humidity_2m",
+    "sin_hour",
+    "cos_hour",
+    "sin_month",
+    "cos_month",
+    "ghi_lag1"
+  ],
+  "mean": {
+    "clearsky_ratio": 0.8118208651283769,
+    "cloud_cover": 85.9367088607595,
+    "temperature_2m": 27.9457395293518,
+    "rain": 0.6235663919802905,
+    "wind_speed_10m": 9.75846572083935,
+    "relative_humidity_2m": 81.14306346104834,
+    "sin_hour": 0.22624125638767034,
+    "cos_hour": -0.8384113575665746,
+    "sin_month": 0.03779437015767877,
+    "cos_month": -0.04359807020861304,
+    "ghi_lag1": 343.5748024806728
+  },
+  "std": {
+    "clearsky_ratio": 0.29487010868256075,
+    "cloud_cover": 23.358500129521847,
+    "temperature_2m": 1.9847997965976534,
+    "rain": 1.6998946112283901,
+    "wind_speed_10m": 4.548573902299814,
+    "relative_humidity_2m": 8.888037081086347,
+    "sin_hour": 0.4673564403075214,
+    "cos_hour": 0.16577134138160032,
+    "sin_month": 0.7069677572904158,
+    "cos_month": 0.704948269678135,
+    "ghi_lag1": 289.0679483268733
+  },
+  "grid_scalars": [
+    "rain_mean",
+    "rain_max",
+    "wet_frac",
+    "rain_std",
+    "mask_frac",
+    "motion_vx",
+    "motion_vy",
+    "motion_valid"
+  ],
+  "grid_mean": {
+    "rain_mean": 0.031170808537260685,
+    "rain_max": 0.38874984065406376,
+    "wet_frac": 0.1383146137421948,
+    "rain_std": 0.029154277012674184,
+    "mask_frac": 0.8768683571183948,
+    "motion_vx": 0.009854727720669441,
+    "motion_vy": 0.06082745731033897,
+    "motion_valid": 0.12403364200152918
+  },
+  "grid_std": {
+    "rain_mean": 0.1372415231776132,
+    "rain_max": 1.2670844777016155,
+    "wet_frac": 0.314589316512835,
+    "rain_std": 0.10540044419393418,
+    "mask_frac": 0.019607432182376306,
+    "motion_vx": 1.8748629369690164,
+    "motion_vy": 1.8922649764012125,
+    "motion_valid": 0.3296339313385378
+  },
+  "nwp_cols": [
+    "nwp_gfs_cloud_cover_t1h",
+    "nwp_gfs_shortwave_radiation_t1h",
+    "nwp_gfs_precipitation_t1h",
+    "nwp_gfs_cloud_cover_t2h",
+    "nwp_gfs_shortwave_radiation_t2h",
+    "nwp_gfs_precipitation_t2h",
+    "nwp_gfs_cloud_cover_t3h",
+    "nwp_gfs_shortwave_radiation_t3h",
+    "nwp_gfs_precipitation_t3h"
+  ],
+  "nwp_mean": {
+    "nwp_gfs_cloud_cover_t1h": 81.7104357798165,
+    "nwp_gfs_shortwave_radiation_t1h": 603.1004587155963,
+    "nwp_gfs_precipitation_t1h": 0.3275838069829486,
+    "nwp_gfs_cloud_cover_t2h": 81.52155963302752,
+    "nwp_gfs_shortwave_radiation_t2h": 654.5637614678899,
+    "nwp_gfs_precipitation_t2h": 0.3449547668754349,
+    "nwp_gfs_cloud_cover_t3h": 81.46261467889909,
+    "nwp_gfs_shortwave_radiation_t3h": 655.9526376146789,
+    "nwp_gfs_precipitation_t3h": 0.35902818044764007
+  },
+  "nwp_std": {
+    "nwp_gfs_cloud_cover_t1h": 30.135100945904366,
+    "nwp_gfs_shortwave_radiation_t1h": 280.411472847703,
+    "nwp_gfs_precipitation_t1h": 0.8784940559535075,
+    "nwp_gfs_cloud_cover_t2h": 30.042417439352267,
+    "nwp_gfs_shortwave_radiation_t2h": 245.0093351813893,
+    "nwp_gfs_precipitation_t2h": 0.8493162388551183,
+    "nwp_gfs_cloud_cover_t3h": 29.988952762751676,
+    "nwp_gfs_shortwave_radiation_t3h": 245.4272631790628,
+    "nwp_gfs_precipitation_t3h": 0.835798348385552
+  },
+  "n_train": 11771,
+  "n_val": 2523,
+  "n_test": 2523,
+  "track": "B",
+  "train_end": "2024-09-06 11:00:00"
+}

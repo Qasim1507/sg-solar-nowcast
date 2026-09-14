@@ -1,0 +1,183 @@
+# Multimodal solar irradiance nowcasting - Singapore
+# All coordinates, extents and station handling are config-driven. No hard-coded
+# geography anywhere in logic (see tests/test_geometry.py for the round-trip check).
+
+site:
+  name: Singapore
+  latitude: 1.3521
+  longitude: 103.8198
+  altitude_m: 15
+  timezone: Asia/Singapore
+  tz_offset_hours: 8
+
+horizons: [1, 2, 3]           # hours ahead
+quantiles: [0.1, 0.25, 0.5, 0.75, 0.9]
+
+daylight:
+  start_hour: 8               # 08:00 SGT inclusive
+  end_hour: 17                # 17:00 SGT inclusive
+
+period:
+  # ERA5 + NEA both verified back to 2020-01-01.
+  start: "2020-01-01"
+  end: null                   # null => today - archive_lag_days
+  archive_lag_days: 3         # ERA5 archive runs ~2 days behind; 3 is safe
+
+# ---------------------------------------------------------------- temporal branch
+clearsky:
+  # Open-Meteo ERA5 `shortwave_radiation` is the mean of the PRECEDING hour, so the
+  # row labelled 17:00 covers 16:00-17:00 and is centred at 16:30. Clear-sky must be
+  # evaluated at that centre, i.e. timestamp - 30 min.
+  #
+  # Verified empirically (see tests/test_clearsky.py): offset -30 maximises the
+  # correlation between ERA5 GHI and Ineichen clear-sky (r=0.877 vs 0.801 at +30),
+  # and on the 30 clearest days it yields k_t flat at 0.95-1.04 from 09:00-17:00.
+  # The previous +30 value was wrong by a full hour and drove median k_t from 0.19
+  # at 08:00 to 1.46 at 17:00, which also made the 1.25x clear-sky clamp bind on
+  # 68.7% of t+3h targets issued at 14:00.
+  # Clear-sky is INTEGRATED over the preceding hour (midpoint rule) rather than
+  # sampled at a point, because irradiance is strongly convex near sunrise and a
+  # point estimate at the hour centre understates the 08:00 hour badly.
+  integration_window_min: 60
+  integration_step_min: 5
+  # NOT dead config: tests/test_clearsky.py asserts against it, and predict.py
+  # uses it for LIVE clear-sky. Note the two paths disagree - training integrates
+  # over [t-60, t] (above), serving takes a single point at t-30 - so live 08:00
+  # clear-sky is understated. See predict.py::clearsky_series.
+  eval_offset_min: -30
+  model: ineichen
+  # Below this clear-sky value the k_t ratio is numerically unstable, so the
+  # denominator is floored and the ratio clipped rather than voided. A floor of 20
+  # voided 6% of rows - ALL of them 08:00 issue times, where clear-sky at 07:30 is
+  # only ~24 W/m2 - which would have silently dropped every early-morning sample
+  # from training. Keep it low and rely on the clip.
+  min_ghi_for_ratio: 5.0
+  max_ratio: 1.5
+
+temporal:
+  lookback: 24                # daylight steps
+  hourly_vars:
+    - temperature_2m
+    - relative_humidity_2m
+    - rain
+    - wind_speed_10m
+    - wind_direction_10m
+    - cloud_cover
+    - shortwave_radiation
+  features:                   # order is contractual - train_stats.json keys follow it
+    - clearsky_ratio
+    - cloud_cover
+    - temperature_2m
+    - rain
+    - wind_speed_10m
+    - relative_humidity_2m
+    - sin_hour
+    - cos_hour
+    - sin_month
+    - cos_month
+    - ghi_lag1
+
+# ---------------------------------------------------------------- spatial branch
+grid:
+  # Verified 2026-09-08: all 88 active rainfall gauges fall inside this extent.
+  # Network truly spans ~28 km N-S x 47 km E-W.
+  lon_min: 103.6
+  lon_max: 104.1
+  lat_min: 1.15
+  lat_max: 1.48
+  nx: 64
+  ny: 64
+  method: idw                 # idw | linear
+  idw_power: 2.0
+  idw_max_km: 12.0            # cells farther than this from ANY gauge -> mask 0
+  frame_offsets_min: [0, 30, 60]   # channels: t, t-30, t-60
+
+nea:
+  base_url: "https://api-open.data.gov.sg/v2/real-time/api"
+  endpoints:
+    rainfall:          {priority: 1, cadence: dense}
+    air-temperature:   {priority: 2, cadence: hourly}
+    relative-humidity: {priority: 2, cadence: hourly}
+    wind-speed:        {priority: 2, cadence: hourly}
+    wind-direction:    {priority: 2, cadence: hourly}
+  page_size: 25               # verified: API returns 25 readings per page
+  readings_per_day: 288       # 5-minute cadence
+  # Verified: paginationToken is base64("offset=N") and crafted offsets work.
+  # Lets us seek straight to daylight frames instead of walking all 12 pages/day.
+  use_offset_seek: true
+  # Fetch window. Padded 1h before daylight start so the t-60min frame exists at
+  # 08:00. The upper bound is 14:00, not 17:00, because a sample needs ALL THREE
+  # horizons and t+3h must stay inside daylight -> issue times only run 08:00-14:00.
+  # That is 4 pages/day instead of 5; frames after 14:00 are never used in training.
+  # The dashboard's 3-hour scrubber reads LIVE data, so it is unaffected.
+  fetch_start_hour: 7
+  fetch_end_hour: 14
+  min_stations: 30            # coverage assertion floor
+  request_delay_s: 1.2
+  rate_limit_backoff_s: 11    # API says "try again in 10 seconds" (code 24)
+
+# ---------------------------------------------------------------- NWP head inputs
+nwp:
+  archive_url: "https://historical-forecast-api.open-meteo.com/v1/forecast"
+  live_url: "https://api.open-meteo.com/v1/forecast"
+  # CRITICAL: never use best_match. Verified 2026-09-08 that the default returns
+  # values bit-identical to the ERA5 archive target -> pure target leakage.
+  # See tests/test_nwp_leakage.py. Explicit models only.
+  models: [gfs_seamless]      # verified archive from ~2021-04-01, live API parity
+  optional_models: [icon_seamless]   # ~2023-01-01 onward
+  vars: [cloud_cover, shortwave_radiation, precipitation]
+  forbid_best_match: true
+
+weather:
+  archive_url: "https://archive-api.open-meteo.com/v1/archive"
+
+# ---------------------------------------------------------------- dataset / splits
+dataset:
+  # Two tracks. Track A is the headline: all modalities present, every model scored
+  # on identical rows. Track B uses the longer record without the NWP branch.
+  tracks:
+    A: {start: "2021-04-01", require_nwp: true}
+    B: {start: "2020-01-01", require_nwp: false}
+  split: [0.70, 0.15, 0.15]   # chronological
+  min_test_samples: 500
+  min_real_fraction: 0.5      # lookback windows with less real data than this -> raise
+
+# ---------------------------------------------------------------- model
+model:
+  temporal:  {hidden: 64, layers: 1, dropout: 0.1}
+  spatial:   {channels: [16, 32, 64], dropout: 0.1}   # keep encoder < 1M params
+  fusion:    {dim: 128, n_heads: 4}
+  gate:      {hidden: 32}
+  head:      {hidden: 128, dropout: 0.1}
+
+train:
+  batch_size: 64
+  epochs: 60
+  lr: 0.001
+  weight_decay: 0.0001
+  patience: 10
+  seeds: [0, 1, 2]
+  device: auto                # auto -> mps > cuda > cpu
+
+eval:
+  # Top edge is 1.51 (the k_t clip), not 1.31, so EVERY row lands in exactly one
+  # bin. With a 1.31 edge, 4.6% of rows - almost all 08:00 issue times, where the
+  # Ineichen model underestimates clear-sky at very low sun - fell into no bin and
+  # silently vanished from the stratified calibration table.
+  cloud_bins:
+    - [0.0, 0.4, cloudy]
+    - [0.4, 0.7, mixed]
+    - [0.7, 1.51, clear]
+  coverage_target: 0.90
+  gate_collapse_threshold: 0.10   # alpha range below this => report collapse
+
+paths:
+  raw: artifacts/raw
+  grids: artifacts/grids
+  processed: artifacts/processed
+  checkpoints: artifacts/checkpoints
+  reports: artifacts/reports
+
+api:
+  refresh_minutes: 15
+  staleness_thresholds_min: {nea: 30, nwp: 240, era5: 5760}

@@ -1,0 +1,272 @@
+15:59:29 INFO    fetch | track B | train=11771 val=2523 test=2523
+15:59:29 INFO    fetch | LightGBM features: 33 with grid scalars, 25 without
+/Users/qasimnalawala/Desktop/Project Re/data/dataset.py:180: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/utils/tensor_numpy.cpp:219.)
+  "grid": torch.from_numpy(np.ascontiguousarray(grid)),
+
+BASELINES - track B   (test n=2523, central band = 80% nominal)
+============================================================================================================
+model               horizon        n      MAE     RMSE  pinball     CRPS   cover    skill  sprd/real
+------------------------------------------------------------------------------------------------------------
+persistence         t+1h        2523    107.2    139.7    36.77    73.53   0.784   -0.414       1.02
+persistence         t+2h        2523    198.8    234.7    63.78   127.56   0.748   -0.700       1.41
+persistence         t+3h        2523    262.7    297.6    80.44   160.89   0.740   -0.894       1.63
+------------------------------------------------------------------------------------------------------------
+smart_persistence   t+1h        2523     72.7    104.2    29.18    58.35   0.815    0.041       0.90
+smart_persistence   t+2h        2523    108.8    145.7    41.75    83.49   0.822    0.070       1.17
+smart_persistence   t+3h        2523    125.2    168.7    46.85    93.69   0.837    0.097       1.27
+------------------------------------------------------------------------------------------------------------
+lightgbm_tabular    t+1h        2523     56.8     85.7    20.64    41.28   0.794    0.251       0.57
+lightgbm_tabular    t+2h        2523     78.4    110.6    27.68    55.37   0.781    0.330       0.70
+lightgbm_tabular    t+3h        2523     84.5    116.8    29.45    58.91   0.774    0.390       0.73
+------------------------------------------------------------------------------------------------------------
+lightgbm_tab+grid   t+1h        2523     57.4     86.3    20.57    41.14   0.790    0.242       0.55
+lightgbm_tab+grid   t+2h        2523     77.3    109.1    27.25    54.49   0.784    0.339       0.68
+lightgbm_tab+grid   t+3h        2523     83.1    114.4    28.90    57.80   0.771    0.400       0.72
+------------------------------------------------------------------------------------------------------------
+skill = 1 - MAE/MAE(smart persistence point forecast); higher is better, 0 = no gain
+cover = observed coverage of the 80% central band (nominal 0.80); sprd/real in k_t space, 1.00 is the goal
+
+STRATIFIED CALIBRATION by current cloud regime - track B
+====================================================================================================
+model               horizon  regime         n   cover  sprd/real      MAE     bias
+----------------------------------------------------------------------------------------------------
+persistence         t+1h     cloudy       126   0.802       0.98     91.8    -19.0
+persistence         t+1h     mixed        361   0.657       0.95    122.2     -7.4
+persistence         t+1h     clear       2036   0.806       1.40    105.5     20.0
+persistence         t+2h     cloudy       126   0.833       1.21    157.1    -54.5
+persistence         t+2h     mixed        361   0.781       1.50    187.5      1.6
+persistence         t+2h     clear       2036   0.737       1.70    203.4     19.2
+persistence         t+3h     cloudy       126   0.881       1.43    220.2   -111.7
+persistence         t+3h     mixed        361   0.856       1.71    263.9     -2.8
+persistence         t+3h     clear       2036   0.711       1.89    265.1    -25.4
+----------------------------------------------------------------------------------------------------
+smart_persistence   t+1h     cloudy       126   0.603       0.84    113.7    -98.4
+smart_persistence   t+1h     mixed        361   0.648       1.05    123.1    -70.5
+smart_persistence   t+1h     clear       2036   0.858       1.19     61.2     19.5
+smart_persistence   t+2h     cloudy       126   0.548       0.82    192.5   -176.9
+smart_persistence   t+2h     mixed        361   0.654       1.27    152.7   -105.0
+smart_persistence   t+2h     clear       2036   0.869       1.43     95.8     42.8
+smart_persistence   t+3h     cloudy       126   0.500       0.82    244.8   -231.9
+smart_persistence   t+3h     mixed        361   0.731       1.25    165.8   -112.3
+smart_persistence   t+3h     clear       2036   0.877       1.52    110.6     59.1
+----------------------------------------------------------------------------------------------------
+lightgbm_tabular    t+1h     cloudy       126   0.778       0.72     84.9    -16.1
+lightgbm_tabular    t+1h     mixed        361   0.770       0.80     89.6     -3.5
+lightgbm_tabular    t+1h     clear       2036   0.800       0.70     49.2     20.6
+lightgbm_tabular    t+2h     cloudy       126   0.714       0.81    131.1     -9.5
+lightgbm_tabular    t+2h     mixed        361   0.801       0.93    105.0     13.1
+lightgbm_tabular    t+2h     clear       2036   0.781       0.79     70.4     25.3
+lightgbm_tabular    t+3h     cloudy       126   0.690       0.83    135.6    -14.1
+lightgbm_tabular    t+3h     mixed        361   0.767       0.87    113.7     16.9
+lightgbm_tabular    t+3h     clear       2036   0.780       0.80     76.2     22.4
+----------------------------------------------------------------------------------------------------
+lightgbm_tab+grid   t+1h     cloudy       126   0.738       0.71     81.5     -6.6
+lightgbm_tab+grid   t+1h     mixed        361   0.773       0.82     89.9      6.9
+lightgbm_tab+grid   t+1h     clear       2036   0.796       0.67     50.2     26.5
+lightgbm_tab+grid   t+2h     cloudy       126   0.762       0.80    123.4      0.3
+lightgbm_tab+grid   t+2h     mixed        361   0.801       0.92    105.4     16.6
+lightgbm_tab+grid   t+2h     clear       2036   0.783       0.76     69.5     25.9
+lightgbm_tab+grid   t+3h     cloudy       126   0.754       0.80    127.4     -7.8
+lightgbm_tab+grid   t+3h     mixed        361   0.778       0.85    111.3     28.4
+lightgbm_tab+grid   t+3h     clear       2036   0.770       0.79     75.4     21.7
+----------------------------------------------------------------------------------------------------
+15:59:50 INFO    fetch | evaluated B_concat_seed0.pt
+15:59:51 INFO    fetch | evaluated B_concat_seed1.pt
+15:59:52 INFO    fetch | evaluated B_concat_seed2.pt
+15:59:53 INFO    fetch | evaluated B_gated_seed0.pt
+15:59:54 INFO    fetch | evaluated B_gated_seed1.pt
+15:59:55 INFO    fetch | evaluated B_gated_seed2.pt
+15:59:56 INFO    fetch | evaluated B_spatial_seed0.pt
+15:59:57 INFO    fetch | evaluated B_spatial_seed1.pt
+15:59:58 INFO    fetch | evaluated B_spatial_seed2.pt
+15:59:59 INFO    fetch | evaluated B_temporal_seed0.pt
+15:59:59 INFO    fetch | evaluated B_temporal_seed1.pt
+16:00:00 INFO    fetch | evaluated B_temporal_seed2.pt
+
+MODEL RESULTS   (central band = 80% nominal)
+================================================================================================================
+variant     seedhorizon        n      MAE     RMSE  pinball     CRPS   cover    skill  sprd/real
+----------------------------------------------------------------------------------------------------------------
+concat         0t+1h        2523     56.7     82.9    20.34    40.69   0.857    0.252       0.60
+concat         0t+2h        2523     77.9    109.3    27.35    54.71   0.825    0.334       0.69
+concat         0t+3h        2523     86.2    119.0    30.38    60.76   0.822    0.379       0.75
+concat         1t+1h        2523     55.8     82.4    28.70    57.40   0.954    0.264       1.91
+concat         1t+2h        2523     77.8    109.8    27.68    55.35   0.855    0.334       0.74
+concat         1t+3h        2523     86.6    119.8    30.26    60.52   0.829    0.376       0.77
+concat         2t+1h        2523     56.6     84.9    28.69    57.39   0.956    0.253       1.92
+concat         2t+2h        2523     77.3    110.4    27.46    54.92   0.829    0.339       0.68
+concat         2t+3h        2523     85.0    119.5    37.57    75.14   0.931    0.387       1.99
+gated          0t+1h        2523     58.2     83.1    20.46    40.92   0.829    0.232       0.58
+gated          0t+2h        2523     76.6    107.5    27.05    54.10   0.769    0.345       0.61
+gated          0t+3h        2523     85.4    115.2    29.97    59.94   0.794    0.384       0.72
+gated          1t+1h        2523     58.2     85.9    21.13    42.26   0.866    0.233       0.64
+gated          1t+2h        2523     78.7    112.5    35.98    71.96   0.966    0.327       2.02
+gated          1t+3h        2523     87.4    121.0    31.11    62.22   0.853    0.369       0.83
+gated          2t+1h        2523     56.1     83.5    20.20    40.40   0.836    0.260       0.56
+gated          2t+2h        2523     76.6    108.0    27.05    54.10   0.793    0.345       0.64
+gated          2t+3h        2523     83.8    116.6    29.83    59.66   0.753    0.395       0.65
+spatial        0t+1h        2523    133.9    162.0    51.08   102.15   0.933   -0.767       2.13
+spatial        0t+2h        2523    140.3    169.4    53.24   106.48   0.928   -0.200       2.19
+spatial        0t+3h        2523    146.3    175.7    54.40   108.80   0.916   -0.055       2.19
+spatial        1t+1h        2523    570.7    617.8   110.14   220.28   0.916   -6.527       2.11
+spatial        1t+2h        2523    144.3    173.0    54.37   108.73   0.901   -0.234       2.17
+spatial        1t+3h        2523    150.6    179.1    50.29   100.58   0.800   -0.086       1.30
+spatial        2t+1h        2523    125.5    153.8    43.20    86.39   0.836   -0.655       1.25
+spatial        2t+2h        2523    106.1    135.8    36.77    73.55   0.839    0.093       1.03
+spatial        2t+3h        2523    153.6    180.5    49.94    99.88   0.798   -0.107       1.24
+temporal       0t+1h        2523     59.0     84.4    29.22    58.45   0.908    0.222       1.86
+temporal       0t+2h        2523     79.8    109.7    28.10    56.19   0.801    0.318       0.70
+temporal       0t+3h        2523     86.0    118.4    30.37    60.73   0.832    0.380       0.78
+temporal       1t+1h        2523     57.1     84.8    52.65   105.29   0.927    0.247       1.87
+temporal       1t+2h        2523     78.9    111.4    28.17    56.35   0.830    0.326       0.70
+temporal       1t+3h        2523     85.4    120.5    37.94    75.88   0.939    0.384       1.99
+temporal       2t+1h        2523     57.5     84.1    20.70    41.40   0.804    0.242       0.56
+temporal       2t+2h        2523     78.7    111.1    28.57    57.13   0.839    0.327       0.73
+temporal       2t+3h        2523     87.4    121.6    31.10    62.19   0.849    0.370       0.83
+----------------------------------------------------------------------------------------------------------------
+
+ABLATION over 3 seeds [0, 1, 2]   (mean +/- std)
+========================================================================================================
+variant    horizon    runs           pinball               MAE           skill       sprd/real
+--------------------------------------------------------------------------------------------------------
+concat     t+1h          3    25.91 +/- 3.94    56.38 +/- 0.41    0.26 +/- 0.01    1.48 +/- 0.62
+concat     t+2h          3    27.50 +/- 0.13    77.69 +/- 0.29    0.34 +/- 0.00    0.70 +/- 0.03
+concat     t+3h          3    32.74 +/- 3.42    85.91 +/- 0.67    0.38 +/- 0.00    1.17 +/- 0.58
+--------------------------------------------------------------------------------------------------------
+gated      t+1h          3    20.60 +/- 0.39    57.51 +/- 0.99    0.24 +/- 0.01    0.59 +/- 0.04
+gated      t+2h          3    30.03 +/- 4.21    77.29 +/- 1.01    0.34 +/- 0.01    1.09 +/- 0.66
+gated      t+3h          3    30.30 +/- 0.57    85.57 +/- 1.48    0.38 +/- 0.01    0.73 +/- 0.07
+--------------------------------------------------------------------------------------------------------
+spatial    t+1h          3    68.14 +/-29.87  276.70 +/-207.90   -2.65 +/- 2.74    1.83 +/- 0.41
+spatial    t+2h          3    48.13 +/- 8.04   130.23 +/-17.15   -0.11 +/- 0.15    1.80 +/- 0.54
+spatial    t+3h          3    51.54 +/- 2.02   150.16 +/- 2.97   -0.08 +/- 0.02    1.58 +/- 0.43
+--------------------------------------------------------------------------------------------------------
+temporal   t+1h          3    34.19 +/-13.51    57.86 +/- 0.81    0.24 +/- 0.01    1.43 +/- 0.62
+temporal   t+2h          3    28.28 +/- 0.21    79.13 +/- 0.48    0.32 +/- 0.00    0.71 +/- 0.02
+temporal   t+3h          3    33.13 +/- 3.41    86.25 +/- 0.84    0.38 +/- 0.01    1.20 +/- 0.56
+--------------------------------------------------------------------------------------------------------
+
+STRATIFIED CALIBRATION by current cloud regime   (coverage target 0.80, spread/reality target 1.00)
+========================================================================================================
+variant     seedhorizon  regime         n   cover  sprd/real      MAE     bias   flag
+--------------------------------------------------------------------------------------------------------
+concat         0t+1h     cloudy       126   0.810       0.77     79.4    -10.3   
+concat         0t+1h     mixed        361   0.751       0.77     91.7      4.7   
+concat         0t+1h     clear       2036   0.879       0.77     49.1      4.6   
+concat         0t+2h     cloudy       126   0.786       0.80    117.4    -16.1   
+concat         0t+2h     mixed        361   0.770       0.89    109.9     18.0   
+concat         0t+2h     clear       2036   0.837       0.78     69.8     17.3   
+concat         0t+3h     cloudy       126   0.770       0.82    126.5    -12.0   
+concat         0t+3h     mixed        361   0.781       0.89    121.3     37.4   
+concat         0t+3h     clear       2036   0.833       0.83     77.4     19.9   
+concat         1t+1h     cloudy       126   0.881       1.17     76.9    -17.5   
+concat         1t+1h     mixed        361   0.864       1.76     89.5      1.5   wide
+concat         1t+1h     clear       2036   0.975       2.67     48.5      9.2   wide
+concat         1t+2h     cloudy       126   0.810       0.83    112.9    -27.1   
+concat         1t+2h     mixed        361   0.798       0.94    110.5      9.8   
+concat         1t+2h     clear       2036   0.868       0.85     69.9     21.4   
+concat         1t+3h     cloudy       126   0.810       0.85    118.9    -14.6   
+concat         1t+3h     mixed        361   0.778       0.90    122.2     32.2   
+concat         1t+3h     clear       2036   0.839       0.86     78.3     29.3   
+concat         2t+1h     cloudy       126   0.889       1.22     77.2    -14.0   
+concat         2t+1h     mixed        361   0.884       1.77     90.7      3.0   wide
+concat         2t+1h     clear       2036   0.973       2.68     49.3     21.5   wide
+concat         2t+2h     cloudy       126   0.778       0.81    112.0    -20.2   
+concat         2t+2h     mixed        361   0.781       0.89    108.2     10.3   
+concat         2t+2h     clear       2036   0.840       0.77     69.7     29.5   
+concat         2t+3h     cloudy       126   0.873       1.23    117.3     -5.1   
+concat         2t+3h     mixed        361   0.900       1.71    118.2     34.6   wide
+concat         2t+3h     clear       2036   0.941       2.44     77.1     34.0   wide
+gated          0t+1h     cloudy       126   0.770       0.71     80.2    -35.2   
+gated          0t+1h     mixed        361   0.712       0.71     90.8    -20.4   
+gated          0t+1h     clear       2036   0.853       0.75     51.1     -1.7   
+gated          0t+2h     cloudy       126   0.738       0.73    110.9    -20.8   
+gated          0t+2h     mixed        361   0.740       0.83    105.8      7.9   
+gated          0t+2h     clear       2036   0.776       0.69     69.3     20.4   HEDGING
+gated          0t+3h     cloudy       126   0.778       0.75    117.1    -22.0   
+gated          0t+3h     mixed        361   0.762       0.84    116.0     20.7   
+gated          0t+3h     clear       2036   0.801       0.80     78.0     13.1   
+gated          1t+1h     cloudy       126   0.802       0.80     76.8    -12.0   
+gated          1t+1h     mixed        361   0.753       0.78     90.6     12.1   
+gated          1t+1h     clear       2036   0.890       0.83     51.3     25.3   
+gated          1t+2h     cloudy       126   0.889       1.22    110.6    -17.3   
+gated          1t+2h     mixed        361   0.906       1.86    110.0     23.6   wide
+gated          1t+2h     clear       2036   0.981       2.56     71.2     34.2   wide
+gated          1t+3h     cloudy       126   0.849       0.87    115.1     -9.0   
+gated          1t+3h     mixed        361   0.820       0.95    122.2     41.9   
+gated          1t+3h     clear       2036   0.860       0.93     79.6     33.0   
+gated          2t+1h     cloudy       126   0.817       0.76     74.1     -9.0   
+gated          2t+1h     mixed        361   0.737       0.74     89.7     14.1   
+gated          2t+1h     clear       2036   0.855       0.70     49.0     19.9   HEDGING
+gated          2t+2h     cloudy       126   0.778       0.78    112.9    -28.6   
+gated          2t+2h     mixed        361   0.751       0.86    107.9     12.4   
+gated          2t+2h     clear       2036   0.801       0.72     68.7     20.7   
+gated          2t+3h     cloudy       126   0.770       0.76    117.9    -29.7   
+gated          2t+3h     mixed        361   0.731       0.81    118.3     29.3   
+gated          2t+3h     clear       2036   0.755       0.71     75.6     23.2   
+spatial        0t+1h     cloudy       126   0.976       1.92    234.0    225.1   wide
+spatial        0t+1h     mixed        361   0.950       2.22    175.6    118.9   wide
+spatial        0t+1h     clear       2036   0.927       2.87    120.4     -7.3   wide
+spatial        0t+2h     cloudy       126   0.960       1.55    176.0    143.5   wide
+spatial        0t+2h     mixed        361   0.928       2.13    156.5     69.5   wide
+spatial        0t+2h     clear       2036   0.926       2.73    135.3    -15.7   wide
+spatial        0t+3h     cloudy       126   0.913       1.39    157.3     76.9   
+spatial        0t+3h     mixed        361   0.928       1.95    171.5     66.4   wide
+spatial        0t+3h     clear       2036   0.914       2.68    141.2    -21.8   wide
+spatial        1t+1h     cloudy       126   0.984       1.99    272.3   -272.3   wide
+spatial        1t+1h     mixed        361   0.947       2.21    489.0   -489.0   wide
+spatial        1t+1h     clear       2036   0.906       2.84    603.6   -603.6   wide
+spatial        1t+2h     cloudy       126   0.976       1.60    183.3    157.5   wide
+spatial        1t+2h     mixed        361   0.928       2.11    155.8     63.4   wide
+spatial        1t+2h     clear       2036   0.892       2.69    139.8    -26.1   wide
+spatial        1t+3h     cloudy       126   0.698       0.87    159.6     83.9   
+spatial        1t+3h     mixed        361   0.731       1.15    169.2     53.9   
+spatial        1t+3h     clear       2036   0.818       1.59    146.7    -39.7   wide
+spatial        2t+1h     cloudy       126   0.659       1.35    191.2    173.2   
+spatial        2t+1h     mixed        361   0.861       1.39    161.0     83.8   
+spatial        2t+1h     clear       2036   0.842       1.64    115.1    -26.8   wide
+spatial        2t+2h     cloudy       126   0.722       0.90    160.0    127.7   
+spatial        2t+2h     mixed        361   0.798       1.04    140.2     74.8   
+spatial        2t+2h     clear       2036   0.853       1.27     96.7    -20.5   
+spatial        2t+3h     cloudy       126   0.754       0.96    164.3     63.6   
+spatial        2t+3h     mixed        361   0.753       1.16    177.9     73.6   
+spatial        2t+3h     clear       2036   0.808       1.49    148.6    -32.8   wide
+temporal       0t+1h     cloudy       126   0.833       1.11     84.2    -27.6   
+temporal       0t+1h     mixed        361   0.839       1.70     91.9    -11.2   wide
+temporal       0t+1h     clear       2036   0.924       2.61     51.6     -0.6   wide
+temporal       0t+2h     cloudy       126   0.706       0.78    121.0    -34.8   
+temporal       0t+2h     mixed        361   0.770       0.88    108.6     -4.0   
+temporal       0t+2h     clear       2036   0.812       0.80     72.2      7.0   
+temporal       0t+3h     cloudy       126   0.714       0.79    126.8    -17.8   
+temporal       0t+3h     mixed        361   0.767       0.88    119.1     22.4   
+temporal       0t+3h     clear       2036   0.851       0.88     77.6     18.8   
+temporal       1t+1h     cloudy       126   0.794       1.08     85.3    -33.2   
+temporal       1t+1h     mixed        361   0.845       1.72     90.4     -3.3   wide
+temporal       1t+1h     clear       2036   0.950       2.63     49.5      8.8   wide
+temporal       1t+2h     cloudy       126   0.698       0.77    125.4    -58.8   
+temporal       1t+2h     mixed        361   0.778       0.86    107.1     -3.4   
+temporal       1t+2h     clear       2036   0.848       0.81     71.0     21.3   
+temporal       1t+3h     cloudy       126   0.802       1.15    128.4    -44.9   
+temporal       1t+3h     mixed        361   0.903       1.69    117.2     22.5   wide
+temporal       1t+3h     clear       2036   0.954       2.46     77.1     29.7   wide
+temporal       2t+1h     cloudy       126   0.810       0.74     79.9    -20.0   
+temporal       2t+1h     mixed        361   0.737       0.75     91.0    -10.9   
+temporal       2t+1h     clear       2036   0.816       0.70     50.1      7.2   HEDGING
+temporal       2t+2h     cloudy       126   0.817       0.82    116.0    -16.3   
+temporal       2t+2h     mixed        361   0.789       0.89    108.4      3.9   
+temporal       2t+2h     clear       2036   0.849       0.85     71.2     22.9   
+temporal       2t+3h     cloudy       126   0.770       0.85    124.3    -19.7   
+temporal       2t+3h     mixed        361   0.837       0.95    119.9     27.6   
+temporal       2t+3h     clear       2036   0.856       0.93     79.3     27.9   
+--------------------------------------------------------------------------------------------------------
+HEDGING = spread/reality < 0.70: the model is collapsing toward the mean in that regime.
+
+PHYSICS GATE alpha   (collapse threshold: range < 0.10 of [0,1])
+================================================================================================
+variant     seed       n     min     p10     p50     p90     max    range   status
+------------------------------------------------------------------------------------------------
+gated          0    2523   0.409   0.476   0.497   0.518   0.550    0.141   ok
+gated          1    2523   0.382   0.450   0.522   0.586   0.647    0.265   ok
+gated          2    2523   0.441   0.495   0.529   0.584   0.625    0.184   ok
+------------------------------------------------------------------------------------------------
+16:00:00 INFO    fetch | wrote /Users/qasimnalawala/Desktop/Project Re/artifacts/reports/evaluation_B.json

@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Singapore GHI Nowcast</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <div class="brand">
+    <h1>Singapore GHI Nowcast</h1>
+    <span class="sub">Probabilistic irradiance forecast &middot; t+1h / t+2h / t+3h &middot; all times <strong>SGT (UTC+8)</strong></span>
+  </div>
+  <div class="controls">
+    <button id="refresh" title="Recompute the forecast now">Refresh</button>
+    <button id="theme" title="Toggle dark / light">&#9788; Light</button>
+  </div>
+</header>
+
+<div id="banners"></div>
+
+<main>
+  <section class="card wide" id="summary-card">
+    <p id="summary" class="summary">Loading forecast&hellip;</p>
+    <p id="issue-line" class="meta"></p>
+  </section>
+
+  <!-- 1. FAN CHART -->
+  <section class="card wide">
+    <h2>Forecast fan chart</h2>
+    <p class="hint">Observed GHI (solid) then the forecast as a quantile fan. The band is
+      wide when the outcome is genuinely uncertain and narrow when it is not &mdash; that
+      asymmetry is the point of a probabilistic forecast.</p>
+    <div id="fan" class="plot"></div>
+    <div id="kt-note" class="note hidden"></div>
+    <p class="legend-key">
+      <span class="swatch band80"></span> 10&ndash;90% band
+      <span class="swatch band50"></span> 25&ndash;75% band
+      <span class="swatch line-median"></span> median
+      <span class="swatch line-cs"></span> clear-sky envelope
+    </p>
+  </section>
+
+  <!-- 2. RAIN MAP -->
+  <section class="card wide">
+    <h2>Rain-gauge field</h2>
+    <p class="hint">Interpolated 5-minute rainfall over the NEA gauge network.
+      Hatched cells lie far from any gauge &mdash; interpolated from nothing, not
+      measured zero.</p>
+    <div class="map-controls">
+      <label><input type="checkbox" id="layer-grid" checked> Interpolated field</label>
+      <label><input type="checkbox" id="layer-stations" checked> Gauge stations</label>
+      <label><input type="checkbox" id="layer-mask" checked> Mask (no-data) hatching</label>
+      <span id="motion-readout" class="meta"></span>
+    </div>
+    <div class="slider-row">
+      <button id="play" title="Animate the last 3 hours">&#9654; Play</button>
+      <input type="range" id="time-slider" min="0" max="0" value="0" step="1"
+             aria-label="Scrub rain field through the last 3 hours">
+      <span id="slider-label" class="meta">live</span>
+    </div>
+    <div id="map"></div>
+    <p id="map-meta" class="meta"></p>
+  </section>
+
+  <!-- 3. LIVE ROLLING VERIFICATION -->
+  <section class="card wide" id="rolling-card">
+    <h2>Live verification</h2>
+    <p class="hint">Every forecast this model issues is stored and scored as truth
+      arrives. <strong>ERA5 is the real target and lags ~2 days</strong>; the analysis
+      lane fills within the hour but is a model product this forecaster also consumes,
+      so it flatters. The two are never mixed.</p>
+    <div class="controls" id="rolling-controls">
+      <label>Window
+        <select id="rv-window">
+          <option value="24h">24 hours</option>
+          <option value="7d" selected>7 days</option>
+          <option value="30d">30 days</option>
+        </select>
+      </label>
+      <label>Truth
+        <select id="rv-source">
+          <option value="era5" selected>ERA5 (final)</option>
+          <option value="analysis">Analysis (provisional)</option>
+        </select>
+      </label>
+      <label>Horizon
+        <select id="rv-horizon">
+          <option value="1" selected>t+1h</option>
+          <option value="2">t+2h</option>
+          <option value="3">t+3h</option>
+        </select>
+      </label>
+      <span id="rv-badge"></span>
+    </div>
+    <div id="rolling" class="tablewrap">Loading&hellip;</div>
+    <div id="rv-plot" class="plot"></div>
+    <p class="hint" id="rv-store"></p>
+  </section>
+
+  <!-- 4 + 5. OFFLINE VERIFICATION AND CALIBRATION -->
+  <section class="card">
+    <h2>Verification</h2>
+    <p class="hint">The offline held-out evaluation from <code>evaluate.py</code>.
+      Skill is measured against <strong>smart persistence</strong> (holding
+      the clear-sky index constant), the honest benchmark. Every number carries its
+      sample size.</p>
+    <div id="verification" class="tablewrap">Loading&hellip;</div>
+  </section>
+
+  <section class="card">
+    <h2>Stratified calibration</h2>
+    <p class="hint">Coverage and spread/reality in <strong>k<sub>t</sub> space</strong>,
+      split by current cloud regime. Aggregate metrics conceal a model that hedges on
+      cloudy days; this table is what exposes it.</p>
+    <div id="calibration" class="tablewrap">Loading&hellip;</div>
+  </section>
+
+  <!-- 5. MODEL AND DATA STATUS -->
+  <section class="card">
+    <h2>Model &amp; data status</h2>
+    <div id="model-info" class="tablewrap">Loading&hellip;</div>
+  </section>
+
+  <section class="card">
+    <h2>Data freshness</h2>
+    <div id="health" class="tablewrap">Loading&hellip;</div>
+  </section>
+
+  <!-- 6. DIAGNOSTICS -->
+  <section class="card wide">
+    <details id="diag-wrap">
+      <summary><h2 class="inline">Diagnostics</h2></summary>
+      <div id="diagnostics" class="tablewrap">Loading&hellip;</div>
+    </details>
+  </section>
+
+  <section class="card wide">
+    <details>
+      <summary><h2 class="inline">Known limitations</h2></summary>
+      <div id="limitations" class="limitations">Loading&hellip;</div>
+    </details>
+  </section>
+</main>
+
+<footer>
+  <span>Target variable is <strong>ERA5 reanalysis</strong> shortwave radiation, not a
+  pyranometer measurement. Verification uses the same product the model was trained on,
+  so it is a consistency check, not independent ground truth.</span>
+</footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

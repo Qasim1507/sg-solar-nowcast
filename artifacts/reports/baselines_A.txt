@@ -1,0 +1,70 @@
+00:32:09 INFO    fetch | track A | train=9566 val=2050 test=2051
+00:32:09 INFO    fetch | LightGBM features: 33 with grid scalars, 25 without
+
+BASELINES - track A   (test n=2051, central band = 80% nominal)
+============================================================================================================
+model               horizon        n      MAE     RMSE  pinball     CRPS   cover    skill  sprd/real
+------------------------------------------------------------------------------------------------------------
+persistence         t+1h        2051    103.3    135.3    35.33    70.66   0.832   -0.419       1.07
+persistence         t+2h        2051    195.7    231.3    62.35   124.70   0.786   -0.694       1.47
+persistence         t+3h        2051    262.3    296.9    79.46   158.93   0.766   -0.890       1.69
+------------------------------------------------------------------------------------------------------------
+smart_persistence   t+1h        2051     69.2     99.1    28.09    56.18   0.818    0.049       0.89
+smart_persistence   t+2h        2051    106.3    142.1    41.13    82.25   0.817    0.080       1.18
+smart_persistence   t+3h        2051    123.3    165.9    46.56    93.11   0.830    0.112       1.28
+------------------------------------------------------------------------------------------------------------
+lightgbm_tabular    t+1h        2051     52.4     79.0    19.06    38.11   0.787    0.281       0.53
+lightgbm_tabular    t+2h        2051     75.0    105.6    26.43    52.86   0.784    0.351       0.69
+lightgbm_tabular    t+3h        2051     81.2    111.8    28.51    57.03   0.769    0.415       0.75
+------------------------------------------------------------------------------------------------------------
+lightgbm_tab+grid   t+1h        2051     53.3     80.7    19.13    38.27   0.770    0.268       0.51
+lightgbm_tab+grid   t+2h        2051     73.5    104.2    26.11    52.21   0.774    0.363       0.68
+lightgbm_tab+grid   t+3h        2051     79.0    109.1    27.99    55.97   0.774    0.431       0.74
+------------------------------------------------------------------------------------------------------------
+skill = 1 - MAE/MAE(smart persistence point forecast); higher is better, 0 = no gain
+cover = observed coverage of the 80% central band (nominal 0.80); sprd/real in k_t space, 1.00 is the goal
+
+STRATIFIED CALIBRATION by current cloud regime - track A
+====================================================================================================
+model               horizon  regime         n   cover  sprd/real      MAE     bias
+----------------------------------------------------------------------------------------------------
+persistence         t+1h     cloudy       100   0.860       1.05     83.0     -9.3
+persistence         t+1h     mixed        279   0.717       1.06    115.3     -7.4
+persistence         t+1h     clear       1672   0.849       1.46    102.5     19.6
+persistence         t+2h     cloudy       100   0.840       1.25    152.2    -53.3
+persistence         t+2h     mixed        279   0.799       1.57    184.5      2.2
+persistence         t+2h     clear       1672   0.781       1.79    200.2     17.6
+persistence         t+3h     cloudy       100   0.910       1.47    213.4   -114.5
+persistence         t+3h     mixed        279   0.900       1.78    261.1    -13.0
+persistence         t+3h     clear       1672   0.735       1.97    265.5    -32.0
+----------------------------------------------------------------------------------------------------
+smart_persistence   t+1h     cloudy       100   0.650       0.90    104.9    -88.2
+smart_persistence   t+1h     mixed        279   0.688       1.11    115.6    -69.9
+smart_persistence   t+1h     clear       1672   0.850       1.17     59.4     18.7
+smart_persistence   t+2h     cloudy       100   0.570       0.86    189.8   -175.1
+smart_persistence   t+2h     mixed        279   0.663       1.30    149.3   -102.6
+smart_persistence   t+2h     clear       1672   0.857       1.44     94.1     41.6
+smart_persistence   t+3h     cloudy       100   0.520       0.85    241.6   -227.9
+smart_persistence   t+3h     mixed        279   0.735       1.27    165.0   -115.1
+smart_persistence   t+3h     clear       1672   0.865       1.53    109.3     58.8
+----------------------------------------------------------------------------------------------------
+lightgbm_tabular    t+1h     cloudy       100   0.820       0.77     71.7    -15.3
+lightgbm_tabular    t+1h     mixed        279   0.810       0.84     81.4     -6.6
+lightgbm_tabular    t+1h     clear       1672   0.781       0.64     46.4     13.6
+lightgbm_tabular    t+2h     cloudy       100   0.820       0.89    127.3    -20.0
+lightgbm_tabular    t+2h     mixed        279   0.785       0.94    103.7     11.2
+lightgbm_tabular    t+2h     clear       1672   0.782       0.78     67.1     17.6
+lightgbm_tabular    t+3h     cloudy       100   0.780       0.96    129.8    -15.3
+lightgbm_tabular    t+3h     mixed        279   0.774       0.90    110.1     13.6
+lightgbm_tabular    t+3h     clear       1672   0.767       0.82     73.5     16.2
+----------------------------------------------------------------------------------------------------
+lightgbm_tab+grid   t+1h     cloudy       100   0.820       0.73     71.5     -1.5
+lightgbm_tab+grid   t+1h     mixed        279   0.796       0.83     84.6     14.8
+lightgbm_tab+grid   t+1h     clear       1672   0.763       0.61     46.9     18.9
+lightgbm_tab+grid   t+2h     cloudy       100   0.820       0.89    122.4    -20.9
+lightgbm_tab+grid   t+2h     mixed        279   0.792       0.93    102.6     25.5
+lightgbm_tab+grid   t+2h     clear       1672   0.768       0.76     65.8     18.3
+lightgbm_tab+grid   t+3h     cloudy       100   0.780       0.86    126.1     -9.4
+lightgbm_tab+grid   t+3h     mixed        279   0.767       0.86    103.7     26.5
+lightgbm_tab+grid   t+3h     clear       1672   0.775       0.82     72.1     17.6
+----------------------------------------------------------------------------------------------------

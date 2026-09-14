@@ -1,0 +1,20 @@
+services:
+  nowcast:
+    build: .
+    image: sg-solar-nowcast
+    ports: ["8000:8000"]
+    environment:
+      # Set REPLAY_DATE to demo a stored day without live network access.
+      - REPLAY_MODE=${REPLAY_MODE:-0}
+      - REPLAY_DATE=${REPLAY_DATE:-}
+    volumes:
+      - ./artifacts:/app/artifacts
+      - ./config.yaml:/app/config.yaml:ro
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request;urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
