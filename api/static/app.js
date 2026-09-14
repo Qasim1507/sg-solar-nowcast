@@ -505,7 +505,13 @@ function renderSummary(f) {
       (${document.title ? "08:00–17:00" : ""} SGT).</strong> Outputs here are dominated
       by the clear-sky clamp rather than by the model.`, "err");
   }
-  if (f.stale) banner("This forecast is stale relative to its refresh cadence.", "err");
+  if (f.stale) {
+    banner(STATIC
+      ? `This forecast was issued ${fmt(f.rebuilt_age_minutes, 0)} min ago. The `
+        + `scheduler only issues between 08:00 and 17:00 SGT, so overnight the `
+        + `latest forecast is the last one of the day.`
+      : "This forecast is stale relative to its refresh cadence.", "err");
+  }
 }
 
 /* -------------------------------------------------------------- bootstrap */
@@ -539,10 +545,29 @@ async function getJSON(url) {
     if (!p) return { degraded: true, n: 0, error: "not available in the static build" };
     const r = await fetch(p);
     if (!r.ok) return { degraded: true, n: 0, error: `${p}: HTTP ${r.status}` };
-    return r.json();
+    return reage(await r.json());
   }
   const r = await fetch(url);
   return r.json();
+}
+
+// A static file freezes whatever age it was built with. Left alone, a forecast
+// issued at 16:00 still reports "18 min old" at midnight and never trips the stale
+// banner - exactly the "a stale result must never look current" rule the API is
+// built around. Recompute from issue_time, which is a naive SGT wall clock.
+function reage(d) {
+  if (!d || !d.issue_time) return d;
+  // issue_time is a naive SGT wall clock. Pin the offset explicitly, or a viewer
+  // outside Singapore parses it as their own local time and the age is wrong by
+  // their UTC offset.
+  const issued = Date.parse(d.issue_time.replace(" ", "T") + "+08:00");
+  if (Number.isNaN(issued)) return d;
+  const age = Math.max(0, Math.round((Date.now() - issued) / 60000));
+  d.data_age_minutes = Object.assign({}, d.data_age_minutes, { forecast: age });
+  // same threshold the API applies: 4x the NEA staleness budget
+  d.stale = age > 120;
+  d.rebuilt_age_minutes = age;
+  return d;
 }
 
 // ------------------------------------------------- live rolling verification
