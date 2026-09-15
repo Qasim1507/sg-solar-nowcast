@@ -8,9 +8,21 @@ name: nowcast
 # 08:00-17:00 SGT is 00:00-09:00 UTC. Outside that window api.main.in_daylight
 # refuses to issue (night targets are ~0 W/m2 and were excluded from training), so
 # the job still runs but only collects outcomes.
+#
+# HOURLY, NOT EVERY 15 MINUTES. Two reasons, both measured:
+#   1. predict.gather_live_inputs floors the issue time to the hour, and the store
+#      is keyed on (issue_time, horizon, model). Four runs in one hour therefore
+#      upsert onto ONE row - the first live day produced 6 rows across 3 runs but
+#      only 2 distinct issue times. The extra runs did identical work.
+#   2. GitHub delivers the schedule event on a best-effort basis and drops
+#      high-frequency crons under load. With */15 configured, 13 consecutive slots
+#      were skipped and the only schedule event that ever fired arrived outside the
+#      configured window.
+# :05 rather than :00 because the top of the hour is the most contended slot, and
+# it gives Open-Meteo a few minutes to publish the hour's analysis.
 on:
   schedule:
-    - cron: "*/15 0-9 * * *"
+    - cron: "5 0-9 * * *"
   workflow_dispatch:
 
 permissions:

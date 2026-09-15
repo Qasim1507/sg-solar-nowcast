@@ -242,9 +242,16 @@ workflow once via **Actions -> nowcast -> Run workflow** before trusting the cro
 
 ### Two things that will bite otherwise
 
-- **Actions minutes.** Public repos get unlimited free minutes; private repos get
-  2000/month, and 40 runs/day at ~2 min each is ~2400. Either make the repo public
-  or change the cron to `*/30`, which halves it.
+- **The cron is hourly, and that is deliberate.** `predict.gather_live_inputs`
+  floors the issue time to the hour and the store is keyed on
+  `(issue_time, horizon, model)`, so sub-hourly runs upsert onto the same row and
+  do identical work. GitHub also drops high-frequency schedules: with `*/15`
+  configured, 13 consecutive slots were skipped and the single schedule event that
+  did fire arrived outside the configured window. 10 runs/day at ~2 min is also
+  comfortably inside the 2000 min/month private-repo allowance.
+- **The schedule is best-effort.** GitHub gives no SLA on `schedule` for free
+  runners and may skip runs under load. A missed hour costs one forecast, not
+  correctness - but if whole days go missing, the loop needs a real always-on host.
 - **Scheduled workflows are disabled after 60 days of repository inactivity**, and
   commits made with `GITHUB_TOKEN` do not reset that timer. Push a manual commit
   occasionally, or have the workflow use a PAT, or the loop dies silently in two
