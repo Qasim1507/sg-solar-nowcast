@@ -182,80 +182,53 @@ period, which alone moves MAE substantially.
 
 ---
 
-## Running it permanently, for free
+## Daily operation
 
-`uvicorn` only forecasts while it is running, and free hosts that keep a process
-alive either sleep or charge. But **only the issuance loop needs to be continuous -
-the web server does not**, so the two are split:
-
-- **GitHub Actions is the backend.** `.github/workflows/nowcast.yml` runs every 15
-  minutes during SGT daylight: it issues a forecast, collects outcomes, and commits
-  the store.
-- **GitHub Pages is the frontend.** `scripts/build_static_site.py` renders one JSON
-  file per endpoint and publishes the existing page against them. Nothing sleeps.
-
-Vercel cannot host this: its filesystem is ephemeral (the store *is* the verification
-feature), there is no long-running process for the scheduler, and Hobby cron fires
-once a day.
-
-### State lives in git
-
-`data_store/forecasts.csv` and `data_store/outcomes.csv` are the durable copy, kept
-on a `forecast-data` branch so `main` stays readable. sqlite is rebuilt from them
-each run:
+Two commands. Run the first in the morning, the second a few hours later.
 
 ```bash
-python scripts/store_sync.py import    # CSV  -> sqlite, before a cycle
-python scripts/run_cycle.py            # issue + collect, no server
-python scripts/store_sync.py export    # sqlite -> CSV, then commit
+python scripts/forecast.py      # 08:00-17:00 SGT: predict t+1/2/3h
+python scripts/verify.py        # a few hours later: score what has happened
 ```
 
-A cycle that adds three forecasts produces a **three-line diff** - `created_at` is
-preserved on restore, so the export is stable. `tests/test_storage.py::test_restore_preserves_timestamps`
-pins that; without it every row's timestamp is rewritten and the CSV churns in full
-every 15 minutes.
+Neither needs a server, a database or any setup step - both read and write
+`data_store/*.csv` directly.
 
-The static build regenerates on every run and is published as a Pages artifact, never
-committed - otherwise the rain raster alone would add ~580 MB/year to the repo.
+### What each does
 
-### First-time setup
+`forecast.py` fetches live Open-Meteo analysis, NEA gauge readings and GFS NWP,
+runs the served CatBoost + k_t model, prints the three horizons, and appends to
+`data_store/forecasts.csv`. It refuses outside 08:00-17:00 SGT, because the model
+was trained only on daylight issue times and a night forecast is extrapolation.
 
-The project is not yet a git repository. Once you have created an empty GitHub repo:
+`verify.py` fetches whatever truth has arrived, scores every stored forecast
+against it, and writes `data_store/verification.csv` - one row per
+(issue_time, horizon, source) with the prediction, the actual, the error, and
+whether the outcome fell inside the 80% interval.
 
-```bash
-git init && git add . && git commit -m "initial commit"
-git branch -M main
-git remote add origin git@github.com:<you>/<repo>.git
-git push -u origin main
+### The two truth sources arrive at different times
 
-# the data branch the workflow commits to
-git checkout --orphan forecast-data
-git rm -rf --cached . && rm -rf artifacts site
-python scripts/store_sync.py export          # seeds data_store/
-git add data_store && git commit -m "seed forecast store"
-git push -u origin forecast-data
-git checkout main
-```
+| Source | Lag | What it is |
+|---|---|---|
+| `analysis` | ~1 hour | **Provisional.** A model product the forecaster also consumes; it disagrees with ERA5 by ~97 W/m2 on average. A liveness check, not a quality measure. |
+| `era5` | ~3 days | The real target, scored the way `REPORT.md` is. |
 
-Then in the repo settings: **Pages -> Source -> GitHub Actions**, and run the
-workflow once via **Actions -> nowcast -> Run workflow** before trusting the cron.
+Running `verify.py` three hours after forecasting only fills the provisional lane -
+ERA5 does not exist yet. That resolves itself: because you run it daily, each run
+also backfills the final ERA5 numbers for forecasts made about three days earlier.
+One habit covers both lanes.
 
-### Two things that will bite otherwise
+### Why this is manual
 
-- **The cron is hourly, and that is deliberate.** `predict.gather_live_inputs`
-  floors the issue time to the hour and the store is keyed on
-  `(issue_time, horizon, model)`, so sub-hourly runs upsert onto the same row and
-  do identical work. GitHub also drops high-frequency schedules: with `*/15`
-  configured, 13 consecutive slots were skipped and the single schedule event that
-  did fire arrived outside the configured window. 10 runs/day at ~2 min is also
-  comfortably inside the 2000 min/month private-repo allowance.
-- **The schedule is best-effort.** GitHub gives no SLA on `schedule` for free
-  runners and may skip runs under load. A missed hour costs one forecast, not
-  correctness - but if whole days go missing, the loop needs a real always-on host.
-- **Scheduled workflows are disabled after 60 days of repository inactivity**, and
-  commits made with `GITHUB_TOKEN` do not reset that timer. Push a manual commit
-  occasionally, or have the workflow use a PAT, or the loop dies silently in two
-  months.
+It was on a GitHub Actions cron. GitHub delivered roughly **one of ten** requested
+slots per day, hours late, and `schedule` carries no SLA on free runners. The
+workflow is still in the repo for `workflow_dispatch`, so the published dashboard
+can be rebuilt from the Actions tab when you want it refreshed.
+
+Note also that `predict.gather_live_inputs` floors the issue time to the hour and
+the store is keyed on `(issue_time, horizon, model)`, so running `forecast.py`
+twice within the same hour updates one row rather than adding a second - there is
+no value in running it more than hourly.
 
 ### What the static build gives up
 
